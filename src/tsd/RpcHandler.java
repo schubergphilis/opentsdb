@@ -1,9 +1,9 @@
 // This file is part of OpenTSDB.
-// Copyright (C) 2010  The OpenTSDB Authors.
+// Copyright (C) 2010-2012  The OpenTSDB Authors.
 //
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or (at your
+// the Free Software Foundation, either version 2.1 of the License, or (at your
 // option) any later version.  This program is distributed in the hope that it
 // will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 // of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
@@ -107,7 +107,7 @@ final class RpcHandler extends SimpleChannelUpstreamHandler {
         handleTelnetRpc(msgevent.getChannel(), (String[]) message);
       } else if (message instanceof HttpRequest) {
           String uri = ((HttpRequest) message).getUri();
-          LOG.debug("HTTP Message, uri=" + uri); 
+          LOG.info("HTTP Message, uri=" + uri); 
         if(!uri.isEmpty() && uri.startsWith("/odata.svc/")) {
             /* This is for the OData Handler */
             String uri2 = uri.substring(10, uri.length());
@@ -249,8 +249,8 @@ final class RpcHandler extends SimpleChannelUpstreamHandler {
 
     public void execute(final TSDB tsdb, final HttpQuery query) {
       logWarn(query, "shutdown requested");
-      query.sendReply(query.makePage("TSD Exiting", "You killed me",
-                                     "Cleaning up and exiting now."));
+      query.sendReply(HttpQuery.makePage("TSD Exiting", "You killed me",
+                                         "Cleaning up and exiting now."));
       doShutdown(tsdb, query.channel());
     }
 
@@ -327,7 +327,7 @@ final class RpcHandler extends SimpleChannelUpstreamHandler {
                  + "<iframe src=javascript:'' id=__gwt_historyFrame tabIndex=-1"
                  + " style=position:absolute;width:0;height:0;border:0>"
                  + "</iframe>");
-      query.sendReply(query.makePage(
+      query.sendReply(HttpQuery.makePage(
         "<script type=text/javascript language=javascript"
         + " src=/s/queryui.nocache.js></script>",
         "TSD", "Time Series Database", buf.toString()));

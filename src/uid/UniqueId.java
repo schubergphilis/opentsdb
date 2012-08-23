@@ -1,9 +1,9 @@
 // This file is part of OpenTSDB.
-// Copyright (C) 2010  The OpenTSDB Authors.
+// Copyright (C) 2010-2012  The OpenTSDB Authors.
 //
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or (at your
+// the Free Software Foundation, either version 2.1 of the License, or (at your
 // option) any later version.  This program is distributed in the hope that it
 // will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 // of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
@@ -561,11 +561,15 @@ public final class UniqueId implements UniqueIdInterface {
    * Creates a scanner that scans the right range of rows for suggestions.
    */
   private Scanner getSuggestScanner(final String search) {
-    final byte[] start_row = search.isEmpty() ? START_ROW.clone() : toBytes(search);
-    final byte[] end_row = (search.isEmpty() ? END_ROW.clone()
-                            : Arrays.copyOf(start_row, start_row.length));
-    if (!search.isEmpty()) { 
-        end_row[start_row.length - 1]++;
+    final byte[] start_row;
+    final byte[] end_row;
+    if (search.isEmpty()) {
+      start_row = START_ROW;
+      end_row = END_ROW;
+    } else {
+      start_row = toBytes(search);
+      end_row = Arrays.copyOf(start_row, start_row.length);
+      end_row[start_row.length - 1]++;
     }
     final Scanner scanner = client.newScanner(table);
     scanner.setStartKey(start_row);
@@ -633,7 +637,7 @@ public final class UniqueId implements UniqueIdInterface {
    * Puts are synchronized.
    *
    * @param put The PutRequest to execute.
-   * @param attemps The maximum number of attempts.
+   * @param attempts The maximum number of attempts.
    * @param wait The initial amount of time in ms to sleep for after a
    * failure.  This amount is doubled after each failed attempt.
    * @throws HBaseException if all the attempts have failed.  This exception

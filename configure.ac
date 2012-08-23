@@ -1,8 +1,8 @@
-# Copyright (C) 2011  The OpenTSDB Authors.
+# Copyright (C) 2011-2012  The OpenTSDB Authors.
 #
 # This library is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
+# by the Free Software Foundation, either version 2.1 of the License, or
 # (at your option) any later version.
 #
 # This library is distributed in the hope that it will be useful,
@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_INIT([opentsdb], [1.0], [opentsdb@googlegroups.com])
+# Semantic Versioning (see http://semver.org/).
+AC_INIT([opentsdb], [1.1.0-odata], [opentsdb@googlegroups.com])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign])
 
@@ -25,13 +26,14 @@ AC_CONFIG_FILES([build-aux/fetchdep.sh], [chmod +x build-aux/fetchdep.sh])
 # For people with Automake <= 1.9.6
 AC_PROG_MKDIR_P
 TSDB_FIND_PROG([md5], [md5sum md5 gmd5sum digest])
-if test "${MD5}" != "${MD5%digest}" ; then
-   MD5="${MD5} -a md5"   
+if test x`basename "$MD5"` = x'digest'; then
+  MD5='digest -a md5'
 fi
 TSDB_FIND_PROG([java])
 TSDB_FIND_PROG([javac])
 TSDB_FIND_PROG([jar])
 TSDB_FIND_PROG([gnuplot])
+TSDB_FIND_PROG([tar], [gtar tar])
 AC_PATH_PROG([JAVADOC], [javadoc], [])
 AM_MISSING_PROG([JAVADOC], [javadoc])
 

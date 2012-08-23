@@ -1,9 +1,9 @@
 // This file is part of OpenTSDB.
-// Copyright (C) 2010  The OpenTSDB Authors.
+// Copyright (C) 2010-2012  The OpenTSDB Authors.
 //
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or (at your
+// the Free Software Foundation, either version 2.1 of the License, or (at your
 // option) any later version.  This program is distributed in the hope that it
 // will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 // of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
@@ -20,9 +20,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Groups multiple spans together and offers a dynamic "view" on them.
@@ -47,11 +44,6 @@ import org.slf4j.LoggerFactory;
  * iterator when using the {@link Span.DownsamplingIterator}.
  */
 final class SpanGroup implements DataPoints {
-
-  private static final Logger LOG = LoggerFactory.getLogger(SpanGroup.class);
-
-  /** The TSDB we belong to. */
-  private final TSDB tsdb;
 
   /** Start time (UNIX timestamp in seconds) on 32 bits ("unsigned" int). */
   private final long start_time;
@@ -115,7 +107,6 @@ final class SpanGroup implements DataPoints {
             final boolean rate,
             final Aggregator aggregator,
             final int interval, final Aggregator downsampler) {
-    this.tsdb = tsdb;
     this.start_time = start_time;
     this.end_time = end_time;
     if (spans != null) {

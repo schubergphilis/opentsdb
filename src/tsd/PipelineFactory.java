@@ -1,9 +1,9 @@
 // This file is part of OpenTSDB.
-// Copyright (C) 2010  The OpenTSDB Authors.
+// Copyright (C) 2010-2012  The OpenTSDB Authors.
 //
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or (at your
+// the Free Software Foundation, either version 2.1 of the License, or (at your
 // option) any later version.  This program is distributed in the hope that it
 // will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 // of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
@@ -13,6 +13,9 @@
 package net.opentsdb.tsd;
 
 import com.sun.jersey.api.container.ContainerFactory;
+import com.sun.jersey.api.core.ApplicationAdapter;
+import com.sun.jersey.api.core.ClassNamesResourceConfig;
+import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.server.impl.container.netty.NettyHandlerContainer;
 import java.net.URI;
 import java.util.HashMap;
@@ -31,9 +34,10 @@ import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 
 import net.opentsdb.core.TSDB;
+import net.opentsdb.odata.OpenTSDBProducer;
 import net.opentsdb.odata.OpenTSDBProducerFactory;
-import org.odata4j.producer.resources.ODataProducerProvider;
-import org.odata4j.producer.resources.ODataResourceConfig;
+import org.odata4j.jersey.producer.resources.ODataProducerProvider;
+import org.odata4j.jersey.producer.resources.ODataApplication;
 
 /**
  * Creates a newly configured {@link ChannelPipeline} for a new channel.
@@ -51,8 +55,6 @@ public final class PipelineFactory implements ChannelPipelineFactory {
   private final ConnectionManager connmgr = new ConnectionManager();
   private final DetectHttpOrRpc HTTP_OR_RPC = new DetectHttpOrRpc();
 
-  /** The TSDB to use. */
-  private final TSDB tsdb;
   /** Stateless handler for RPCs. */
   private final RpcHandler rpchandler;
   /** Handler for OData */
@@ -63,7 +65,6 @@ public final class PipelineFactory implements ChannelPipelineFactory {
    * @param tsdb The TSDB to use.
    */
   public PipelineFactory(final TSDB tsdb, final URI baseUri) {
-    this.tsdb = tsdb;
     this.rpchandler = new RpcHandler(tsdb);
     
     /**
@@ -71,16 +72,19 @@ public final class PipelineFactory implements ChannelPipelineFactory {
      */
     Map<String, Object> props = new HashMap<String, Object>();
     props.put(NettyHandlerContainer.PROPERTY_BASE_URI, baseUri.toString() + "/odata.svc/");
-    props.put(OpenTSDBProducerFactory.TSDB_INTERFACE, tsdb);
-    props.put(ODataProducerProvider.FACTORY_PROPNAME, "net.opentsdb.odata.OpenTSDBProducerFactory");
+    props.put(ResourceConfig.PROPERTY_CONTAINER_RESPONSE_FILTERS, "net.opentsdb.tsd.NoCacheFilter");
+    
+    ODataProducerProvider.setInstance(new OpenTSDBProducer(tsdb));
+    ODataApplication app = new ODataApplication();
     
     /**
      * Create the resource configuration
      */
-    ODataResourceConfig rc = new ODataResourceConfig();
+    ResourceConfig rc = new ApplicationAdapter(app);
     rc.setPropertiesAndFeatures(props);
     
     this.odatahandler = ContainerFactory.createContainer(NettyHandlerContainer.class, rc);
+    
   }
 
   @Override

@@ -1,9 +1,9 @@
 // This file is part of OpenTSDB.
-// Copyright (C) 2011  The OpenTSDB Authors.
+// Copyright (C) 2011-2012  The OpenTSDB Authors.
 //
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or (at your
+// the Free Software Foundation, either version 2.1 of the License, or (at your
 // option) any later version.  This program is distributed in the hope that it
 // will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 // of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
@@ -13,29 +13,13 @@
 package net.opentsdb.tsd;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import org.jboss.netty.channel.Channel;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import org.mockito.ArgumentMatcher;
-import org.mockito.InOrder;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -177,11 +161,6 @@ public final class TestGraphHandler {
     verify(cachedfile).lastModified();  // Ensure we do a single stat() call.
     PowerMockito.verifyStatic(); // Verify that ...
     System.currentTimeMillis();  // ... this was called only once.
-  }
-
-  private static String mktime(final long millis) {
-    final SimpleDateFormat fmt = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-    return fmt.format(new Date(millis));
   }
 
   /**

@@ -1,8 +1,8 @@
-# Copyright (C) 2011  The OpenTSDB Authors.
+# Copyright (C) 2011-2012  The OpenTSDB Authors.
 #
 # This library is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
+# by the Free Software Foundation; either version 2.1 of the License, or
 # (at your option) any later version.
 #
 # This library is distributed in the hope that it will be useful,
@@ -29,12 +29,14 @@ dist_pkgdata_SCRIPTS = src/mygnuplot.sh
 tsdb_SRC := \
 	src/core/Aggregator.java	\
 	src/core/Aggregators.java	\
+	src/core/CompactionQueue.java	\
 	src/core/Const.java	\
 	src/core/DataPoint.java	\
 	src/core/DataPoints.java	\
 	src/core/DataPointsIterator.java	\
 	src/core/IncomingDataPoints.java	\
 	src/core/IllegalDataException.java	\
+	src/core/Internal.java	\
 	src/core/Query.java	\
 	src/core/RowKey.java	\
 	src/core/RowSeq.java	\
@@ -51,7 +53,6 @@ tsdb_SRC := \
 	src/tools/ArgP.java	\
 	src/tools/CliOptions.java	\
 	src/tools/CliQuery.java	\
-	src/tools/Core.java	\
 	src/tools/DumpSeries.java	\
 	src/tools/Fsck.java	\
 	src/tools/TSDMain.java	\
@@ -74,13 +75,14 @@ tsdb_SRC := \
 	src/uid/NoSuchUniqueName.java	\
 	src/uid/UniqueId.java	\
 	src/uid/UniqueIdInterface.java	\
-	src/odata/CachedResponse.java	\
 	src/odata/OpenTSDBProducer.java	\
-	src/odata/OpenTSDBProducerFactory.java
+	src/odata/OpenTSDBProducerFactory.java \
+	src/odata/OpenTSDBEdmGenerator.java
+	
 
 
 tsdb_DEPS = \
-	$(HBASEASYNC)	\
+	$(ASYNCHBASE)	\
 	$(JCL_OVER_SLF4J)	\
 	$(LOG4J_OVER_SLF4J)	\
 	$(LOGBACK_CLASSIC)	\
@@ -89,17 +91,16 @@ tsdb_DEPS = \
 	$(SLF4J_API)	\
 	$(SUASYNC)	\
 	$(ZOOKEEPER) \
-	$(CORE4J) \
 	$(ODATA4J) \
-	$(JODATIME) \
-        $(JERSEYCORE) \
-        $(JERSEYSERVER) \
-	$(JERSEYNETTY)
+	$(JERSEYNETTY) \
+	$(EHCACHE)
 
 # Install all the .jar files in pkgdatadir.
 pkgdata_DATA = $(tsdb_DEPS) $(jar)
 
 test_SRC := \
+	src/core/TestAggregators.java \
+	src/core/TestCompactionQueue.java	\
 	src/core/TestTags.java	\
 	src/stats/TestHistogram.java	\
 	src/tsd/TestGraphHandler.java	\
@@ -176,7 +177,7 @@ $(builddata_SRC): .git/HEAD $(tsdb_SRC) $(top_srcdir)/build-aux/gen_build_data.s
 
 jar: $(jar) .javac-unittests-stamp .gwtc-stamp
 
-JAVA_COMPILE := $(JAVAC) $(AM_JAVACFLAGS) -d $(builddir)
+JAVA_COMPILE := $(JAVAC) $(AM_JAVACFLAGS) -d .
 
 # Sets the shell variable $src to the list of `.java' files we depend on
 # that need to be recompiled.  Runs "exit 0" if there's nothing to compile,
@@ -206,7 +207,6 @@ $(tsdb_SRC): $(tsdb_DEPS)
 find_jar = test -f "$$jar" && echo "$$jar" || echo "$(srcdir)/$$jar"
 get_dep_classpath = `for jar in $(tsdb_DEPS); do $(find_jar); done | tr '\n' ':'`
 .javac-stamp: $(tsdb_SRC) $(builddata_SRC)
-	@$(MKDIR_P) $(builddir)
 	@$(filter_src); cp=$(get_dep_classpath); \
           echo "$(JAVA_COMPILE) -cp $$cp $$src"; \
                 $(JAVA_COMPILE) -cp $$cp $$src
@@ -220,7 +220,7 @@ GWT_CLASSPATH = `jar=$(GWT_DEV); $(find_jar)`:`jar=$(GWT_USER); $(find_jar)`:$(s
 # using Git while rebasing and whatnot).
 gwtc: .gwtc-stamp
 .gwtc-stamp: $(httpui_SRC) $(httpui_DEPS) $(GWT_DEV) $(GWT_USER)
-	@$(MKDIR_P) gwt
+	@$(mkdir_p) gwt
 	{ cd $(srcdir) && cat $(httpui_SRC); } | $(MD5) >"$@-t"
 	cmp -s "$@" "$@-t" && exit 0; \
         $(JAVA) $(GWTC_JVM_ARGS) -cp $(GWT_CLASSPATH) com.google.gwt.dev.Compiler \
@@ -246,7 +246,7 @@ gwttsd: staticroot
 	./tsdb tsd $(DEV_TSD_ARGS)
 
 .staticroot-stamp: $(dist_static_DATA) .gwtc-stamp
-	$(MKDIR_P) $(DEV_TSD_STATICROOT)
+	$(mkdir_p) $(DEV_TSD_STATICROOT)
 	cp $(dist_static_DATA:%=$(srcdir)/%) $(DEV_TSD_STATICROOT)
 	find -L $(DEV_TSD_STATICROOT) -type l -exec rm {} \;
 	p=`pwd`/gwt/queryui && cd $(DEV_TSD_STATICROOT) \
@@ -260,14 +260,14 @@ gwttsd: staticroot
 # know ahead of time what the file names are.
 install-data-local: staticroot
 	@$(NORMAL_INSTALL)
-	test -z "$(staticdir)" || $(MKDIR_P) "$(DESTDIR)$(staticdir)"
+	test -z "$(staticdir)" || $(mkdir_p) "$(DESTDIR)$(staticdir)"
 	@set -e; pwd; ls -lFh; cd "$(DEV_TSD_STATICROOT)"; \
           list=`find -L . ! -type d`; for p in $$list; do \
           p=$${p#./}; \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
           dstdir=`dirname "$(DESTDIR)$(staticdir)/$$p"`; \
           if test -d "$$dstdir"; then :; else \
-            echo " $(MKDIR_P) '$$dstdir'"; $(MKDIR_P) "$$dstdir"; fi; \
+            echo " $(mkdir_p) '$$dstdir'"; $(mkdir_p) "$$dstdir"; fi; \
 	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(staticdir)/$$p'"; \
 	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(staticdir)/$$p"; \
 	done
@@ -296,7 +296,7 @@ test_classes_with_nested_classes := $(UNITTESTS:.class=*.class)
 # Little set script to make a pretty-ish banner.
 BANNER := sed 's/^.*/  &  /;h;s/./=/g;p;x;p;x'
 check-local: .javac-unittests-stamp
-	classes=`cd $(builddir) && echo $(test_classes_with_nested_classes)` \
+	classes=`echo $(test_classes_with_nested_classes)` \
         && tests=0 && failures=0 \
         && cp="$(get_runtime_dep_classpath):$(srcdir)/src" && \
         for i in $$classes; do \
@@ -328,22 +328,29 @@ $(jar): manifest .javac-stamp $(classes)
 #                       ^^^^^^^^^^^^^^^^^^^^^^^
 # I've seen cases where `jar' exits with an error but leaves a partially built .jar file!
 
+# Generate the file for those who get a tarball without it.  This happens if
+# you download a tarball off GitHub for instance.
+.git/HEAD:
+	echo unknown >$@
+
 JAVADOC_DIR = api
 doc: $(JAVADOC_DIR)/index.html
 
 JDK_JAVADOC = http://download.oracle.com/javase/6/docs/api
 NETTY_JAVADOC = http://docs.jboss.org/netty/$(NETTY_MAJOR_VERSION)/api
+SUASYNC_JAVADOC = http://tsunanet.net/~tsuna/async/$(SUASYNC_VERSION)
 $(JAVADOC_DIR)/index.html: $(tsdb_SRC)
 	$(JAVADOC) -d $(JAVADOC_DIR) -classpath $(get_dep_classpath) \
-          -link $(JDK_JAVADOC) -link $(NETTY_JAVADOC) $? $(builddata_SRC)
+          -link $(JDK_JAVADOC) -link $(NETTY_JAVADOC) -link $(SUASYNC_JAVADOC) \
+          $? $(builddata_SRC)
 
 dist-hook:
-	$(MKDIR_P) $(distdir)/.git
+	$(mkdir_p) $(distdir)/.git
 	echo $(git_version) >$(distdir)/.git/HEAD
 
 mostlyclean-local:
 	@rm -f .javac-stamp .javac-unittests-stamp .gwtc-stamp* .staticroot-stamp
-	rm -rf gwt staticroot
+	rm -rf gwt gwt-unitCache staticroot
 	rm -f manifest $(BUILT_SOURCES)
 	rm -f $(classes_with_nested_classes) $(test_classes_with_nested_classes)
 	test -d $(package_dir) || exit 0 \
@@ -357,6 +364,27 @@ mostlyclean-local:
 clean-local:
 	rm -f $(jar) tsdb
 	rm -rf $(JAVADOC_DIR)
+
+# Assume we are executed from the build dir
+tarball:
+	if test -d "../dist" ; then rm -rf "../dist"; fi
+	mkdir "../dist"
+
+	mkdir "../dist/opentsdb-$(PACKAGE_VERSION)"
+
+	cp -rf staticroot ../dist/opentsdb-$(PACKAGE_VERSION)/staticroot
+	mkdir ../dist/opentsdb-$(PACKAGE_VERSION)/lib
+	cp tsdb-$(PACKAGE_VERSION).jar ../dist/opentsdb-$(PACKAGE_VERSION)/lib
+	( \
+	cp $(tsdb_DEPS) ../dist/opentsdb-$(PACKAGE_VERSION)/lib ;\
+	cd ..  ;\
+	cp src/logback.xml dist/opentsdb-$(PACKAGE_VERSION)/lib ;\
+	cp src/mygnuplot.sh dist/opentsdb-$(PACKAGE_VERSION)/lib ;\
+	)
+	sed 's/^abs_srcdir=.*/abs_srcdir=/; s/^abs_builddir=.*/abs_builddir=/; s/^pkgdatadir=.*/pkgdatadir=lib/' < tsdb > ../dist/opentsdb-$(PACKAGE_VERSION)/tsdb
+
+	(cd ../dist; $(TAR) -czf ../opentsdb-$(PACKAGE_VERSION).tar.gz opentsdb-$(PACKAGE_VERSION))
+
 
 .PHONY: jar doc check gwtc gwtdev printdeps staticroot gwttsd
 include third_party/include.mk

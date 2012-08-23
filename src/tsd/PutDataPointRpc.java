@@ -1,9 +1,9 @@
 // This file is part of OpenTSDB.
-// Copyright (C) 2010  The OpenTSDB Authors.
+// Copyright (C) 2010-2012  The OpenTSDB Authors.
 //
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or (at your
+// the Free Software Foundation, either version 2.1 of the License, or (at your
 // option) any later version.  This program is distributed in the hope that it
 // will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 // of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
@@ -13,7 +13,6 @@
 package net.opentsdb.tsd;
 
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.stumbleupon.async.Callback;
@@ -23,7 +22,6 @@ import org.jboss.netty.channel.Channel;
 
 import net.opentsdb.core.TSDB;
 import net.opentsdb.core.Tags;
-import net.opentsdb.core.WritableDataPoints;
 import net.opentsdb.stats.StatsCollector;
 import net.opentsdb.uid.NoSuchUniqueName;
 

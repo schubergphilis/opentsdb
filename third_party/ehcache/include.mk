@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
-JODATIME_VERSION := 2.0
-JODATIME := third_party/joda-time/joda-time-$(JODATIME_VERSION).jar
-JODATIME_BASE_URL := http://www.strocamp.net/opentsdb/thirdparty
+EHCACHE_VERSION := 2.5.1
+EHCACHE := third_party/ehcache/ehcache-core-$(EHCACHE_VERSION).jar
+EHCACHE_BASE_URL := http://www.strocamp.net/opentsdb/thirdparty
 
-$(JODATIME): $(JODATIME).md5
-	set dummy "$(JODATIME_BASE_URL)" "$(JODATIME)"; shift; $(FETCH_DEPENDENCY)
+$(EHCACHE): $(EHCACHE).md5
+	set dummy "$(EHCACHE_BASE_URL)" "$(EHCACHE)"; shift; $(FETCH_DEPENDENCY)
 
-THIRD_PARTY += $(JODATIME)
+THIRD_PARTY += $(EHCACHE)
